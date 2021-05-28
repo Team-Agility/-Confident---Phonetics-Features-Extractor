@@ -8,7 +8,7 @@ PAART_DATASET_DIR = 'praat_dataset'
 DATASET_DIR = 'dataset'
 
 """
-  Get All Dataset's Meeting IDsW
+  Get All Dataset's Meeting IDs
   
   :return: String Array with Meeting IDs
 """
@@ -18,7 +18,6 @@ def GetAllMeetingIDs():
   for file in files:
     if '.' not in file and len(file) == 7:
       meetings.append(file)
-      break
   return meetings[0:16]
 
 class Meeting:
@@ -42,7 +41,7 @@ class Meeting:
     with open(f'{self.meeting_dir}/transcript.json') as transcript_json:
       self.speakers = json.load(transcript_json)['speakers']
     with open(f'{self.meeting_dir}/dialog_acts.json') as transcript_json:
-      self.transcript = json.load(transcript_json)
+      self.transcript = json.load(transcript_json)['acts']
 
   """
     Get Speakers
@@ -75,6 +74,83 @@ class Meeting:
           'type': str(silence.mark)
         })
       
+  def getTotalTime(self, act_id):
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    totalTime = dialog_act['end_time'] - dialog_act['start_time']
+    return totalTime if totalTime > 0 else 0.01
+
+  def getPhonationTime(self, act_id):
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    speaker = dialog_act['speaker_id']
+    silences = self.praat_res[speaker]['silences']
+
+    # print(dialog_act)
+    phonationTime = 1
+    for silence in silences:
+      if silence['start'] <= dialog_act['start_time'] and silence['end'] >= dialog_act['end_time'] and silence['type'] == 'sounding':
+        # print(silence)
+        phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
+    return phonationTime
+
+  def getSilentPausesTime(self, act_id):
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    speaker = dialog_act['speaker_id']
+    silences = self.praat_res[speaker]['silences']
+
+    # print(dialog_act)
+    phonationTime = 1
+    for silence in silences:
+      if silence['start'] <= dialog_act['start_time'] and silence['end'] >= dialog_act['end_time'] and silence['type'] == 'silent':
+        # print(silence)
+        phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
+    return phonationTime
+
+  def getSilentPauses(self, act_id):
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    speaker = dialog_act['speaker_id']
+    silences = self.praat_res[speaker]['silences']
+
+    # print(dialog_act)
+    SilentPauses = 0
+    for silence in silences:
+      if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time'] and silence['type'] == 'silent':
+        # print(silence)
+        SilentPauses  += 1
+    return SilentPauses
+
+  def getNoOfSyllables(self, act_id):
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    speaker = dialog_act['speaker_id']
+    syllables = self.praat_res[speaker]['syllables']
+
+    # print(dialog_act)
+    NoOfSyllables = 1
+    for syllable in syllables:
+      if syllable >= dialog_act['start_time'] and syllable <= dialog_act['end_time']:
+        # print(syllable)
+        NoOfSyllables += 1
+    return NoOfSyllables
+
   """
     Get Meeting Transcript
 
@@ -84,8 +160,48 @@ class Meeting:
     print(f'{self.meeting_id}: Getting Transcript')
     return self.transcript
 
+  def getSpeechRate(self, act_id):
+    return self.getNoOfSyllables(act_id) / self.getTotalTime(act_id)
+
+  def getArticulationRate(self, act_id):
+    return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
+
+  def getPhonationTimeRatio(self, act_id):
+    return self.getPhonationTime(act_id) / self.getTotalTime(act_id)
+
+  def getMeanLengthOfRuns(self, act_id):
+    return self.getSilentPauses(act_id) / self.getNoOfSyllables(act_id)
+
+  def getSilentPausesRate(self, act_id):
+    return self.getSilentPauses(act_id) / self.getTotalTime(act_id)
+
+  def getMPD(self, act_id):
+    return self.getSilentPausesTime(act_id) / self.getNoOfSyllables(act_id)
+
+  # def getMSD(self, act_id):
+  #   return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
+
 for meeting_id in GetAllMeetingIDs():
     meeting = Meeting(meeting_id)
-    # print(meeting.get_transcript())
-    # print(meeting.get_speakers())
+    transcript = meeting.get_transcript()
     
+    newTranscript = []
+    for dialog_act in transcript:
+      id = dialog_act['id']
+      newTranscript.append({
+        'act': dialog_act['act'],
+        'start_time': dialog_act['start_time'],
+        'end_time': dialog_act['end_time'],
+        'speaker_id': dialog_act['speaker_id'],
+        'phonetics_features': {
+          'speech_rate': meeting.getSpeechRate(id),
+          'get_articulation_rate': meeting.getArticulationRate(id),
+          'get_phonation_time_ratio': meeting.getPhonationTimeRatio(id),
+          'get_mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
+          'silent_pauses_rate': meeting.getSilentPausesRate(id),
+          'MPD': meeting.getMPD(id),
+        }
+      })
+    
+    with open(f'{DATASET_DIR}/{meeting_id}/phonetics_features.json', 'w') as f:
+        json.dump(newTranscript, f, indent=4)
