@@ -55,6 +55,20 @@ class Meeting:
   def load_praat_result(self):
     with open(f'{self.praat_meeting_dir}/video_meta.json') as res:
       audio_speaker_map = json.load(res)
+    # audio_speaker_map = {
+    #   "A": {
+    #     "path": f"{self.meeting_id}_Headset-0.TextGrid"
+    #   },
+    #   "B": {
+    #     "path": f"{self.meeting_id}_Headset-1.TextGrid"
+    #   },
+    #   "C": {
+    #     "path": f"{self.meeting_id}_Headset-2.TextGrid"
+    #   },
+    #   "D": {
+    #     "path": f"{self.meeting_id}_Headset-3.TextGrid"
+    #   }
+    # }
     for speaker in self.speakers:
       self.praat_res[speaker] = {
         'syllables': [],
@@ -93,27 +107,15 @@ class Meeting:
     silences = self.praat_res[speaker]['silences']
 
     # print(dialog_act)
-    phonationTime = 1
+    phonationTime = 0.01
     for silence in silences:
-      if silence['start'] <= dialog_act['start_time'] and silence['end'] >= dialog_act['end_time'] and silence['type'] == 'sounding':
-        # print(silence)
+      if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time'] and silence['type'] == 'sounding':
         phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
-    return phonationTime
-
-  def getSilentPausesTime(self, act_id):
-    dialog_act = None
-    for act in self.transcript:
-      if act['id'] == act_id:
-        dialog_act = act
-        break
-    speaker = dialog_act['speaker_id']
-    silences = self.praat_res[speaker]['silences']
-
-    # print(dialog_act)
-    phonationTime = 1
-    for silence in silences:
-      if silence['start'] <= dialog_act['start_time'] and silence['end'] >= dialog_act['end_time'] and silence['type'] == 'silent':
-        # print(silence)
+      elif silence['end'] >= dialog_act['start_time'] and silence['start'] <= dialog_act['start_time'] and silence['type'] == 'sounding':
+        phonationTime  += silence['end'] -  dialog_act['start_time']
+      elif silence['end'] >= dialog_act['end_time'] and silence['start'] <= dialog_act['end_time'] and silence['type'] == 'sounding':
+        phonationTime  += dialog_act['end_time'] -  silence['start']
+      elif silence['end'] >= dialog_act['end_time'] and silence['start'] <= dialog_act['start_time'] and silence['type'] == 'sounding':
         phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
     return phonationTime
 
@@ -176,7 +178,7 @@ class Meeting:
     return self.getSilentPauses(act_id) / self.getTotalTime(act_id)
 
   def getMPD(self, act_id):
-    return self.getSilentPausesTime(act_id) / self.getNoOfSyllables(act_id)
+    return (self.getTotalTime(act_id) - self.getPhonationTime(act_id)) / self.getNoOfSyllables(act_id)
 
   # def getMSD(self, act_id):
   #   return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
@@ -189,6 +191,7 @@ for meeting_id in GetAllMeetingIDs():
     for dialog_act in transcript:
       id = dialog_act['id']
       newTranscript.append({
+        'id': id,
         'act': dialog_act['act'],
         'start_time': dialog_act['start_time'],
         'end_time': dialog_act['end_time'],

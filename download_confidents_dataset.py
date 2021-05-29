@@ -13,7 +13,7 @@ for meeting_id in MEETING_IDS:
         })
     confidents = {}
     for conf in req.json()['data']['data']:
-        confidents[int(conf['sk'].replace('confidence_', ''))] = 'Neutral' if conf['data'] == 0 else 'Confidence' if conf['data'] == 1 else 'NonConfidence'
+        confidents[int(conf['sk'].replace('confidence_', ''))] = conf['data']
      
     with open(f'{DATASET_DIR}/{meeting_id}/confidence.json', 'w') as f:
         json.dump(confidents, f, indent=4)
