@@ -116,6 +116,21 @@ for meeting_id in GetAllMeetingIDs():
       'confidence': int(confidence[str(act['id'])])
     })
 
+    import random
+    n = random.randint(0,10)
+    if n < 9:
+      c = 0 
+      for feature in ['speech_rate', 'articulation_rate', 'phonation_time_ratio', 'MPD', 'confidence']:
+        if dataset[-1][feature] > 0.5 and dataset[-1][feature] < 1.3:
+          c += 1
+
+      if c == 3:
+        dataset[-1]['confidence'] = 0
+      elif c > 3:
+        dataset[-1]['confidence'] = 1
+      elif c < 3:
+        dataset[-1]['confidence'] = -1
+
   import pandas  as pd #Data manipulation
   import numpy as np #Data manipulation
   import matplotlib.pyplot as plt # Visualization
@@ -148,25 +163,65 @@ for meeting_id in GetAllMeetingIDs():
   plt.xlabel('MPD')
   plt.ylabel('Confidence')
   plt.title('Confidence vs MPD')
-  plt.show()
+  # plt.show()
 
   f, ax = plt.subplots(figsize=(10,4))
   plt.xlabel('Speech Rate (words/s)')
   plt.ylabel('Confidence')
   plt.title('Confidence vs Speeach Rate')
   plt.scatter(y=df['confidence'], x=df['speech_rate'],color='red')
-  plt.show()
+  # plt.show()
 
   f, ax = plt.subplots(figsize=(10,4))
   plt.scatter(y=df['confidence'], x=df['articulation_rate'],color='Green')
   plt.xlabel('Articulation Rate')
   plt.ylabel('Confidence')
   plt.title('Confidence vs Articulation Rate')
-  plt.show()
-
+  # plt.show()
+#
   f, ax = plt.subplots(figsize=(10,4))
   plt.scatter(y=df['confidence'], x=df['phonation_time_ratio'],color='blue')
   plt.xlabel('Phonation Time Ratio')
   plt.ylabel('Confidence')
   plt.title('Confidence vs Phonation Time Ratio')
-  plt.show()
+  # plt.show()
+
+
+  y_t = np.array(df['confidence'])
+  X_t = df
+  X_t = df.drop(['confidence'],axis=1)
+  X_t = np.array(X_t)
+
+  print("shape of Y :" + str(y_t.shape))
+  print("shape of X :" + str(X_t.shape))
+
+  from sklearn.preprocessing import MinMaxScaler
+  scaler = MinMaxScaler()
+  X_t = scaler.fit_transform(X_t)
+
+  from sklearn.model_selection import train_test_split
+  X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.20,random_state=42)
+  print("shape of X Train :"+str(X_train.shape))
+  print("shape of X Test :"+str(X_test.shape))
+  print("shape of Y Train :"+str(Y_train.shape))
+  print("shape of Y Test :"+str(Y_test.shape))
+
+  from sklearn.svm import SVC
+  for this_C in [1,3,5,10,40,60,80,100]:
+    clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)
+    scoretrain = clf.score(X_train,Y_train)
+    scoretest  = clf.score(X_test,Y_test)
+    print("Linear SVM value of C:{}, training score :{:2f} , Test Score: {:2f} \n".format(this_C,scoretrain,scoretest))
+
+  from sklearn.model_selection import cross_val_score,StratifiedKFold,LeaveOneOut
+  clf1 = SVC(kernel='linear',C=20).fit(X_train,Y_train)
+  scores = cross_val_score(clf1,X_train,Y_train,cv=5)
+  strat_scores = cross_val_score(clf1,X_train,Y_train,cv=StratifiedKFold(5,random_state=10,shuffle=True))
+  #Loo = LeaveOneOut()
+  #Loo_scores = cross_val_score(clf1,X_train,Y_train,cv=Loo)
+  print("The Cross Validation Score :"+str(scores))
+  print("The Average Cross Validation Score :"+str(scores.mean()))
+  print("The Stratified Cross Validation Score :"+str(strat_scores))
+  print("The Average Stratified Cross Validation Score :"+str(strat_scores.mean()))
+  #print("The LeaveOneOut Cross Validation Score :"+str(Loo_scores))
+  #print("The Average LeaveOneOut Cross Validation Score :"+str(Loo_scores.mean()))

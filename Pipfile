@@ -9,6 +9,7 @@ TextGrid = "*"
 pandas = "*"
 seaborn = "*"
 matplotlib = "*"
+sklearn = "*"
 
 [dev-packages]
 

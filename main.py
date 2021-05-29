@@ -178,7 +178,7 @@ class Meeting:
     return self.getSilentPauses(act_id) / self.getTotalTime(act_id)
 
   def getMPD(self, act_id):
-    return (self.getTotalTime(act_id) - self.getPhonationTime(act_id)) / self.getNoOfSyllables(act_id)
+    return abs(self.getTotalTime(act_id) - self.getPhonationTime(act_id)) / self.getNoOfSyllables(act_id)
 
   # def getMSD(self, act_id):
   #   return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
