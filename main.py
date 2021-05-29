@@ -196,13 +196,20 @@ for meeting_id in GetAllMeetingIDs():
         'start_time': dialog_act['start_time'],
         'end_time': dialog_act['end_time'],
         'speaker_id': dialog_act['speaker_id'],
-        'phonetics_features': {
+        'measures': {
           'speech_rate': meeting.getSpeechRate(id),
           'get_articulation_rate': meeting.getArticulationRate(id),
           'get_phonation_time_ratio': meeting.getPhonationTimeRatio(id),
           'get_mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
           'silent_pauses_rate': meeting.getSilentPausesRate(id),
           'MPD': meeting.getMPD(id),
+        },
+        'phonetics_features': {
+          'total_time': meeting.getTotalTime(id),
+          'articulation_rate': meeting.getArticulationRate(id),
+          'silent_pauses': meeting.getSilentPauses(id),
+          'total_syllables': meeting.getNoOfSyllables(id),
+          'phonation_time': meeting.getPhonationTime(id)
         }
       })
     

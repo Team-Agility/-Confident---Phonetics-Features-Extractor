@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 requests = "*"
 TextGrid = "*"
+pandas = "*"
+seaborn = "*"
+matplotlib = "*"
 
 [dev-packages]
 
