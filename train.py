@@ -109,27 +109,31 @@ for meeting_id in GetAllMeetingIDs():
   avg_mpd = meeting.findAverageMPD()
   for act in phonetic_features:
     dataset.append({
-      'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
+      'short_term_energy': act['measures']['short_term_energy'],
+      'speech_rate': (act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']]) / 1,
       'articulation_rate': act['measures']['get_articulation_rate'] / avg_articulation_rate[act['speaker_id']],
       'phonation_time_ratio': act['measures']['get_phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-      'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
+      'MPD': (act['measures']['MPD'] / avg_mpd[act['speaker_id']]) / 1000,
       'confidence': int(confidence[str(act['id'])])
     })
 
     import random
     n = random.randint(0,10)
-    if n < 9:
+    if True:
       c = 0 
-      for feature in ['speech_rate', 'articulation_rate', 'phonation_time_ratio', 'MPD', 'confidence']:
-        if dataset[-1][feature] > 0.5 and dataset[-1][feature] < 1.3:
+      for feature in ['speech_rate', 'articulation_rate', 'phonation_time_ratio', 'MPD']:
+        if dataset[-1][feature] > 0.5 and dataset[-1][feature] < 2.3:
           c += 1
 
-      if c == 3:
+      if c == 2:
         dataset[-1]['confidence'] = 0
-      elif c > 3:
+      elif c > 2:
         dataset[-1]['confidence'] = 1
-      elif c < 3:
+      elif c < 2:
         dataset[-1]['confidence'] = -1
+
+      if feature == 'MPD':
+         dataset[-1][feature] = abs(dataset[-1][feature])
 
   import pandas  as pd #Data manipulation
   import numpy as np #Data manipulation
@@ -165,12 +169,19 @@ for meeting_id in GetAllMeetingIDs():
   plt.title('Confidence vs MPD')
   # plt.show()
 
+  # f, ax = plt.subplots(figsize=(10,4))
+  # plt.xlabel('short_term_energy')
+  # plt.ylabel('Confidence')
+  # plt.title('Confidence vs short_term_energy')
+  # plt.scatter(y=df['confidence'], x=df['short_term_energy'],color='red')
+  # plt.show()
+
   f, ax = plt.subplots(figsize=(10,4))
   plt.xlabel('Speech Rate (words/s)')
   plt.ylabel('Confidence')
-  plt.title('Confidence vs Speeach Rate')
+  plt.title('Confidence vs Speech Rate')
   plt.scatter(y=df['confidence'], x=df['speech_rate'],color='red')
-  # plt.show()
+  plt.show()
 
   f, ax = plt.subplots(figsize=(10,4))
   plt.scatter(y=df['confidence'], x=df['articulation_rate'],color='Green')

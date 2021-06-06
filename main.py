@@ -2,6 +2,8 @@ import glob
 import os
 import json
 import textgrid
+from scipy.io import wavfile
+import numpy
 
 # Constants
 PAART_DATASET_DIR = 'praat_dataset'
@@ -25,12 +27,14 @@ class Meeting:
     self.meeting_id = meeting_id
     self.meeting_dir = f'{DATASET_DIR}/{self.meeting_id}'
     self.praat_meeting_dir = f'{PAART_DATASET_DIR}/{self.meeting_id}'
+    self.audio_file_path = f'{DATASET_DIR}/{self.meeting_id}/audio.wav'
     self.speakers = []
     self.transcript = []
     self.praat_res = {}
     self.phonetics_features = {}
     self.load_transcript()
     self.load_praat_result()
+    self.audio_sample_rate, self.audio_data = wavfile.read(self.audio_file_path)
 
     print('\n')
 
@@ -48,6 +52,33 @@ class Meeting:
   """
   def get_speakers(self):
     return self.speakers
+
+  def getFrequecy(self, start_time, end_time):
+    start_point = int(self.audio_sample_rate * start_time / 1000)
+    end_point = int(self.audio_sample_rate * end_time / 1000)
+    length = (end_time - start_time) / 1000
+    counter = 0
+    for i in range(start_point, end_point):
+        if self.audio_data[i] < 0 and self.audio_data[i+1] > 0:
+            counter += 1
+    return counter/length
+    
+  def calculateSTE(self, act_id):
+    window_size = 0.1
+
+    dialog_act = None
+    for act in self.transcript:
+      if act['id'] == act_id:
+        dialog_act = act
+        break
+    
+    end_time = dialog_act['end_time']
+    STE = 0
+    for start_time in numpy.arange(dialog_act['start_time'], end_time, window_size):
+      freq = self.getFrequecy(start_time, end_time)
+      STE += freq ** 2
+    return STE
+    
     
   """
   Load Praat Phonetics Features
@@ -133,7 +164,7 @@ class Meeting:
     for silence in silences:
       if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time'] and silence['type'] == 'silent':
         # print(silence)
-        SilentPauses  += 1
+        SilentPauses += 1
     return SilentPauses
 
   def getNoOfSyllables(self, act_id):
@@ -197,6 +228,7 @@ for meeting_id in GetAllMeetingIDs():
         'end_time': dialog_act['end_time'],
         'speaker_id': dialog_act['speaker_id'],
         'measures': {
+          'short_term_energy': meeting.calculateSTE(id),
           'speech_rate': meeting.getSpeechRate(id),
           'get_articulation_rate': meeting.getArticulationRate(id),
           'get_phonation_time_ratio': meeting.getPhonationTimeRatio(id),
