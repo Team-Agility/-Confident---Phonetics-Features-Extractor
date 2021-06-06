@@ -169,12 +169,12 @@ for meeting_id in GetAllMeetingIDs():
   plt.title('Confidence vs MPD')
   # plt.show()
 
-  # f, ax = plt.subplots(figsize=(10,4))
-  # plt.xlabel('short_term_energy')
-  # plt.ylabel('Confidence')
-  # plt.title('Confidence vs short_term_energy')
-  # plt.scatter(y=df['confidence'], x=df['short_term_energy'],color='red')
-  # plt.show()
+  f, ax = plt.subplots(figsize=(10,4))
+  plt.xlabel('short_term_energy')
+  plt.ylabel('Confidence')
+  plt.title('Confidence vs short_term_energy')
+  plt.scatter(y=df['confidence'], x=df['short_term_energy'],color='red')
+  plt.show()
 
   f, ax = plt.subplots(figsize=(10,4))
   plt.xlabel('Speech Rate (words/s)')
