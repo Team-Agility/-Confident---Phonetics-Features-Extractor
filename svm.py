@@ -3,10 +3,8 @@ import numpy as np #Data manipulation
 import os
 import glob
 import json
-import math
 
 DATASET_DIR = 'dataset'
-
 
 Labelled_Dataset = ['ES2002a', 'ES2003a', 'ES2004a', 'ES2005a']
 

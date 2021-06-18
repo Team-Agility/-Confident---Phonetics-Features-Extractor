@@ -68,8 +68,11 @@ class Meeting:
     length = (end_time - start_time) / 1000
     counter = 0
     for i in range(start_point, end_point):
-        if self.audio_data[i] < 0 and self.audio_data[i+1] > 0:
-            counter += 1
+      audio_i = list(self.audio_data[i])[0] if isinstance(self.audio_data[i], numpy.ndarray) else self.audio_data[i]
+      audio_i1 = list(self.audio_data[i+1])[0] if isinstance(self.audio_data[i+1], numpy.ndarray) else self.audio_data[i+1]
+      
+      if audio_i < 0 and audio_i1 > 0:
+          counter += 1
     if counter == 0:
       counter += 1
     if length == 0.0:
