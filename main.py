@@ -8,6 +8,8 @@ import numpy
 # Constants
 PAART_DATASET_DIR = 'praat_dataset'
 DATASET_DIR = 'dataset'
+NO_OF_MEETINGS = 16
+USE_PRAAT_TO_SYLLABLES = False
 
 """
   Get All Dataset's Meeting IDs
@@ -20,7 +22,11 @@ def GetAllMeetingIDs():
   for file in files:
     if '.' not in file and len(file) == 7:
       meetings.append(file)
-  return meetings[0:16]
+  return meetings[0:NO_OF_MEETINGS]
+
+def float_round(num, places = 5):
+  # print(num)
+  return round(num * (10**places)) / float(10**places)
 
 class Meeting:
   def __init__(self, meeting_id):
@@ -37,6 +43,7 @@ class Meeting:
     self.audio_sample_rate, self.audio_data = wavfile.read(self.audio_file_path)
 
     print('\n')
+    print(f'Initializing Meeting {self.meeting_id}')
 
   """
     Load Transcript
@@ -61,7 +68,11 @@ class Meeting:
     for i in range(start_point, end_point):
         if self.audio_data[i] < 0 and self.audio_data[i+1] > 0:
             counter += 1
-    return counter/length
+    if counter == 0:
+      counter += 1
+    if length == 0.0:
+      length += 1
+    return float_round(counter/length)
     
   def calculateSTE(self, act_id):
     window_size = 0.1
@@ -77,29 +88,30 @@ class Meeting:
     for start_time in numpy.arange(dialog_act['start_time'], end_time, window_size):
       freq = self.getFrequecy(start_time, end_time)
       STE += freq ** 2
-    return STE
+    return float_round(STE)
     
     
   """
   Load Praat Phonetics Features
   """
   def load_praat_result(self):
-    with open(f'{self.praat_meeting_dir}/video_meta.json') as res:
-      audio_speaker_map = json.load(res)
-    # audio_speaker_map = {
-    #   "A": {
-    #     "path": f"{self.meeting_id}_Headset-0.TextGrid"
-    #   },
-    #   "B": {
-    #     "path": f"{self.meeting_id}_Headset-1.TextGrid"
-    #   },
-    #   "C": {
-    #     "path": f"{self.meeting_id}_Headset-2.TextGrid"
-    #   },
-    #   "D": {
-    #     "path": f"{self.meeting_id}_Headset-3.TextGrid"
-    #   }
-    # }
+    # with open(f'{self.praat_meeting_dir}/video_meta.json') as res:
+    #   audio_speaker_map = json.load(res)
+    audio_speaker_map = {
+      "A": {
+        "path": f"{self.meeting_id}_Headset-0.TextGrid"
+      },
+      "B": {
+        "path": f"{self.meeting_id}_Headset-1.TextGrid"
+      },
+      "C": {
+        "path": f"{self.meeting_id}_Headset-2.TextGrid"
+      },
+      "D": {
+        "path": f"{self.meeting_id}_Headset-3.TextGrid"
+      }
+    }
+
     for speaker in self.speakers:
       self.praat_res[speaker] = {
         'syllables': [],
@@ -126,7 +138,10 @@ class Meeting:
         dialog_act = act
         break
     totalTime = dialog_act['end_time'] - dialog_act['start_time']
-    return totalTime if totalTime > 0 else 0.01
+
+    if totalTime == 0:
+      print(f'Total Time is 0 for {act_id}')
+    return float_round(totalTime)
 
   def getPhonationTime(self, act_id):
     dialog_act = None
@@ -134,21 +149,38 @@ class Meeting:
       if act['id'] == act_id:
         dialog_act = act
         break
+    if dialog_act == None:
+      print(f'Dialog Act {act_id} Not Found.')
+
     speaker = dialog_act['speaker_id']
     silences = self.praat_res[speaker]['silences']
+    speaking_time = dialog_act['end_time'] - dialog_act['start_time']
+    # print(speaker, dialog_act)
 
     # print(dialog_act)
-    phonationTime = 0.01
+    if speaking_time < 0.1:
+      return speaking_time
+    phonationTime = 0.00
     for silence in silences:
-      if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time'] and silence['type'] == 'sounding':
-        phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
-      elif silence['end'] >= dialog_act['start_time'] and silence['start'] <= dialog_act['start_time'] and silence['type'] == 'sounding':
-        phonationTime  += silence['end'] -  dialog_act['start_time']
-      elif silence['end'] >= dialog_act['end_time'] and silence['start'] <= dialog_act['end_time'] and silence['type'] == 'sounding':
-        phonationTime  += dialog_act['end_time'] -  silence['start']
-      elif silence['end'] >= dialog_act['end_time'] and silence['start'] <= dialog_act['start_time'] and silence['type'] == 'sounding':
-        phonationTime  += dialog_act['end_time'] -  dialog_act['start_time']
-    return phonationTime
+      if silence['type'] == 'sounding':
+        # print(silence)
+        # if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time']:
+        #   phonationTime  += silence['end'] - silence['start']
+        if silence['start'] <= dialog_act['start_time'] <= silence['end'] <= dialog_act['end_time']:
+            phonationTime += silence['end'] - dialog_act['start_time']
+        elif dialog_act['start_time'] >= silence['start'] and dialog_act['end_time'] <= silence['end']:
+            phonationTime += dialog_act['end_time'] - dialog_act['start_time']
+        elif dialog_act['start_time'] <= silence['start'] <= dialog_act['end_time'] and dialog_act['end_time'] >= silence['end']:
+            phonationTime += silence['end'] - silence['start']
+        elif dialog_act['start_time'] <= silence['start'] <= dialog_act['end_time'] <= silence['end']:
+            phonationTime += dialog_act['end_time'] - silence['start']
+        elif dialog_act['start_time'] == silence['start'] and dialog_act['end_time'] == silence['end']:
+            phonationTime += dialog_act['end_time'] - dialog_act['start_time']
+    
+    
+    if phonationTime == 0:
+      print(f'Phonation time is 0 for {act_id}')
+    return float_round(phonationTime)
 
   def getSilentPauses(self, act_id):
     dialog_act = None
@@ -165,6 +197,9 @@ class Meeting:
       if silence['start'] >= dialog_act['start_time'] and silence['end'] <= dialog_act['end_time'] and silence['type'] == 'silent':
         # print(silence)
         SilentPauses += 1
+
+    # if SilentPauses == 0:
+    #   print(f'Silent Pauses is 0 for {act_id}')
     return SilentPauses
 
   def getNoOfSyllables(self, act_id):
@@ -173,15 +208,36 @@ class Meeting:
       if act['id'] == act_id:
         dialog_act = act
         break
+    # print(dialog_act)
+    
+    if not USE_PRAAT_TO_SYLLABLES:
+      acts = dialog_act['act'].lower().replace('\'', '').replace('.', '').replace(',', '').replace('?', '').strip().split(' ')
+      count = 0
+      vowels = "aeiouy"
+      for word in acts:
+        if len(word) == 0:
+          continue
+        if word[0] in vowels:
+            count += 1
+        for index in range(1, len(word)):
+            if word[index] in vowels and word[index - 1] not in vowels:
+                count += 1
+        if word.endswith("e"):
+            count -= 1
+      return count if count > 0 else 1
+
     speaker = dialog_act['speaker_id']
     syllables = self.praat_res[speaker]['syllables']
 
     # print(dialog_act)
-    NoOfSyllables = 1
+    NoOfSyllables = 0
     for syllable in syllables:
       if syllable >= dialog_act['start_time'] and syllable <= dialog_act['end_time']:
         # print(syllable)
         NoOfSyllables += 1
+
+    if NoOfSyllables == 0:
+      print(f'No of Syllables is 0 for {act_id}', dialog_act)
     return NoOfSyllables
 
   """
@@ -194,22 +250,37 @@ class Meeting:
     return self.transcript
 
   def getSpeechRate(self, act_id):
-    return self.getNoOfSyllables(act_id) / self.getTotalTime(act_id)
+    total_time = self.getTotalTime(act_id)
+    if total_time == 0:
+      return 1
+    return float_round(self.getNoOfSyllables(act_id) / total_time)
 
   def getArticulationRate(self, act_id):
-    return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
+    phonation_time = self.getPhonationTime(act_id)
+    if phonation_time == 0:
+      return 0
+    return float_round(self.getNoOfSyllables(act_id) / phonation_time)
 
   def getPhonationTimeRatio(self, act_id):
-    return self.getPhonationTime(act_id) / self.getTotalTime(act_id)
+    total_time = self.getTotalTime(act_id)
+    # if self.getPhonationTime(act_id) / total_time > 1:
+    #   print(act_id, self.getPhonationTime(act_id), total_time)
+      # exit(0)
+    if total_time == 0:
+      return 1
+    return float_round(self.getPhonationTime(act_id) / total_time)
 
   def getMeanLengthOfRuns(self, act_id):
-    return self.getSilentPauses(act_id) / self.getNoOfSyllables(act_id)
+    return float_round(self.getSilentPauses(act_id) / self.getNoOfSyllables(act_id))
 
   def getSilentPausesRate(self, act_id):
-    return self.getSilentPauses(act_id) / self.getTotalTime(act_id)
+    total_time = self.getTotalTime(act_id)
+    if total_time == 0:
+      return 0
+    return float_round(self.getSilentPauses(act_id) / total_time)
 
   def getMPD(self, act_id):
-    return abs(self.getTotalTime(act_id) - self.getPhonationTime(act_id)) / self.getNoOfSyllables(act_id)
+    return float_round((self.getTotalTime(act_id) - self.getPhonationTime(act_id)) / self.getNoOfSyllables(act_id))
 
   # def getMSD(self, act_id):
   #   return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
@@ -230,9 +301,9 @@ for meeting_id in GetAllMeetingIDs():
         'measures': {
           'short_term_energy': meeting.calculateSTE(id),
           'speech_rate': meeting.getSpeechRate(id),
-          'get_articulation_rate': meeting.getArticulationRate(id),
-          'get_phonation_time_ratio': meeting.getPhonationTimeRatio(id),
-          'get_mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
+          'articulation_rate': meeting.getArticulationRate(id),
+          'phonation_time_ratio': meeting.getPhonationTimeRatio(id),
+          'mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
           'silent_pauses_rate': meeting.getSilentPausesRate(id),
           'MPD': meeting.getMPD(id),
         },

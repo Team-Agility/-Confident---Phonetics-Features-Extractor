@@ -112,9 +112,9 @@ for meeting_id in GetAllMeetingIDs():
         dataset.append({
             'short_term_energy': act['measures']['short_term_energy'],
             'speech_rate': (act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']]) / 1,
-            'articulation_rate': act['measures']['get_articulation_rate'] / avg_articulation_rate[act['speaker_id']],
-            'phonation_time_ratio': act['measures']['get_phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-            'MPD': (act['measures']['MPD'] / avg_mpd[act['speaker_id']]) / 1000,
+            'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
+            'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
+            'MPD': (act['measures']['MPD'] / avg_mpd[act['speaker_id']]),
             'confidence': int(confidence[str(act['id'])])
         })
 
@@ -139,7 +139,6 @@ for meeting_id in GetAllMeetingIDs():
   import pandas  as pd #Data manipulation
   import numpy as np #Data manipulation
   import matplotlib.pyplot as plt # Visualization
-  import seaborn as sns #Visualization
 
   plt.rcParams['figure.figsize'] = [8,5]
   plt.rcParams['font.size'] =14
@@ -152,4 +151,14 @@ for meeting_id in GetAllMeetingIDs():
   print(df.head())
   print('')
 
+# Read in the file
+with open('dataset.csv', 'r') as file :
+  filedata = file.read()
+
+# Replace the target string
+filedata = filedata.replace('\nshort_term_energy,speech_rate,articulation_rate,phonation_time_ratio,MPD,confidence', '')
+
+# Write the file out again
+with open('dataset.csv', 'w') as file:
+  file.write(filedata)
   
