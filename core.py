@@ -16,7 +16,7 @@ def GetAllMeetingIDs():
     if '.' not in file and len(file) == 7:
       meetings.append(file)
       # break
-  return meetings[0:16]
+  return meetings
 
 class Meeting:
   def __init__(self, meeting_id):

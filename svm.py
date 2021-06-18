@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt # Visualization
 import seaborn as sns #Visualization
 
 df = pd.read_csv('dataset.csv')
-df.fillna(100000, inplace=True)
 print('\nNumber of rows and columns in the data set: ', df.shape)
 print(df.head())
 print('')
