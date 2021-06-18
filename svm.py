@@ -1,10 +1,141 @@
 import pandas  as pd #Data manipulation
 import numpy as np #Data manipulation
-import matplotlib.pyplot as plt # Visualization
-import seaborn as sns #Visualization
+import os
+import glob
+import json
+import math
 
-df = pd.read_csv('dataset.csv')
-df.fillna(100000, inplace=True)
+DATASET_DIR = 'dataset'
+
+
+Labelled_Dataset = ['ES2002a', 'ES2003a', 'ES2004a', 'ES2005a']
+
+"""
+  Get All Dataset's Meeting IDs
+  
+  :return: String Array with Meeting IDs
+"""
+def GetLabellingMeetingIDs(Labelled_Dataset):
+  files = [os.path.basename(folder_path) for folder_path in glob.glob(f'{DATASET_DIR}/*')]
+  meetings = []
+  for file in files:
+    if '.' not in file and len(file) == 7:
+      if file not in Labelled_Dataset:
+        meetings.append(file)
+      # break
+  return meetings
+
+Labelling_Dataset = GetLabellingMeetingIDs(Labelled_Dataset)
+
+class Meeting:
+  def __init__(self, meeting_id):
+    self.meeting_id = meeting_id
+    self.meeting_dir = f'{DATASET_DIR}/{self.meeting_id}'
+    self.phonetic_features = []
+    self.average_speech_rate = {}
+    self.average_articulation_rate = {}
+    self.average_phonation_time_ratio = {}
+    self.average_MPD = {}
+
+    self.loadPhoneticFeatures()
+
+    print('\n')
+
+  """
+    Phonetic Features
+  """
+  def loadPhoneticFeatures(self):
+    with open(f'{self.meeting_dir}/transcript.json') as transcript_json:
+      self.speakers = json.load(transcript_json)['speakers']
+    with open(f'{self.meeting_dir}/phonetics_features.json') as f:
+      self.phonetic_features = json.load(f)
+
+  def getConfidents(self):
+    with open(f'{self.meeting_dir}/confidence.json') as f:
+      return json.load(f)
+
+  def getPhoneticFeatures(self):
+    return self.phonetic_features
+
+  def findAverageSpeechRate(self):
+    for speaker in self.speakers:
+      total_syllables = 0
+      total_time_duration = 0
+      for act in self.phonetic_features:
+        if act['speaker_id'] == speaker:
+          total_syllables += act['phonetics_features']['total_syllables']
+          total_time_duration += act['phonetics_features']['total_time']
+
+      self.average_speech_rate[speaker] = total_syllables / total_time_duration
+    return self.average_speech_rate
+
+  def findAverageArticulationRate(self):
+    for speaker in self.speakers:
+      total_phonation_time = 0
+      total_syllables = 0
+      for act in self.phonetic_features:
+        if act['speaker_id'] == speaker:
+          total_phonation_time += act['phonetics_features']['phonation_time']
+          total_syllables += act['phonetics_features']['total_syllables']
+
+      self.average_articulation_rate[speaker] = total_syllables / total_phonation_time
+    return self.average_articulation_rate
+
+  def findAveragephonationTimeRatio(self):
+    for speaker in self.speakers:
+      total_time = 0
+      total_phonation_time = 0
+      for act in self.phonetic_features:
+        if act['speaker_id'] == speaker:
+          total_time += act['phonetics_features']['total_time']
+          total_phonation_time += act['phonetics_features']['phonation_time']
+
+      self.average_phonation_time_ratio[speaker] = total_phonation_time / total_time
+    return self.average_phonation_time_ratio
+    
+  def findAverageMPD(self):
+    for speaker in self.speakers:
+      total_sielences = 0
+      total_syllables = 0
+      for act in self.phonetic_features:
+        if act['speaker_id'] == speaker:
+          total_sielences += act['phonetics_features']['total_time'] - act['phonetics_features']['phonation_time']
+          total_syllables += act['phonetics_features']['total_syllables']
+
+      self.average_MPD[speaker] = total_sielences / total_syllables
+    return self.average_MPD
+
+  def labelConfidences(self, clf):
+    res = {}
+    for da in self.phonetic_features:
+      out = clf.predict([[da['measures']['short_term_energy'], da['measures']['speech_rate'], da['measures']['articulation_rate'], da['measures']['phonation_time_ratio'], da['measures']['MPD']]])
+      res[da['id']]= str(out[0])
+    with open(f'{self.meeting_dir}/confidence.json', 'w') as f:
+        json.dump(res, f, ensure_ascii=False, indent=4)
+
+dataset = []
+for meeting_id in Labelled_Dataset:
+  meeting = Meeting(meeting_id)
+  phonetic_features = meeting.getPhoneticFeatures()
+  # print(phonetic_features)
+
+  confidence = meeting.getConfidents()
+  avg_speech_rate = meeting.findAverageSpeechRate()
+  avg_articulation_rate = meeting.findAverageArticulationRate()
+  avg_phonation_time = meeting.findAveragephonationTimeRatio()
+  avg_mpd = meeting.findAverageMPD()
+  for act in phonetic_features:
+    if str(act['id']) in confidence:
+        dataset.append({
+            'short_term_energy': act['measures']['short_term_energy'],
+            'speech_rate': (act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']]) / 1,
+            'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
+            'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
+            'MPD': (act['measures']['MPD'] / avg_mpd[act['speaker_id']]),
+            'confidence': int(confidence[str(act['id'])])
+        })
+
+df = pd.DataFrame(dataset)
 print('\nNumber of rows and columns in the data set: ', df.shape)
 print(df.head())
 print('')
@@ -21,33 +152,10 @@ from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 X_t = scaler.fit_transform(X_t)
 
-from sklearn.model_selection import train_test_split
-X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.20,random_state=42)
-print("shape of X Train :"+str(X_train.shape))
-print("shape of X Test :"+str(X_test.shape))
-print("shape of Y Train :"+str(Y_train.shape))
-print("shape of Y Test :"+str(Y_test.shape))
-
 from sklearn.svm import SVC
-for this_C in [1,3,5,10,40,60,80,100]:
-  clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)
-  scoretrain = clf.score(X_train,Y_train)
-  scoretest  = clf.score(X_test,Y_test)
-  print("Linear SVM value of C:{}, training score :{:2f} , Test Score: {:2f} \n".format(this_C,scoretrain,scoretest))
 
-from sklearn.model_selection import cross_val_score,StratifiedKFold,LeaveOneOut
-clf1 = SVC(kernel='linear',C=20).fit(X_train,Y_train)
-scores = cross_val_score(clf1,X_train,Y_train,cv=7)
-strat_scores = cross_val_score(clf1,X_train,Y_train,cv=StratifiedKFold(7,random_state=10,shuffle=True))
-#Loo = LeaveOneOut()
-#Loo_scores = cross_val_score(clf1,X_train,Y_train,cv=Loo)
-print("The Cross Validation Score :"+str(scores))
-print("The Average Cross Validation Score :"+str(scores.mean()))
-print("The Stratified Cross Validation Score :"+str(strat_scores))
-print("The Average Stratified Cross Validation Score :"+str(strat_scores.mean()))
-#print("The LeaveOneOut Cross Validation Score :"+str(Loo_scores))
-#print("The Average LeaveOneOut Cross Validation Score :"+str(Loo_scores.mean()))
-pred = clf1.predict(X_test)
-from sklearn.metrics import classification_report, confusion_matrix
-print(confusion_matrix(Y_test,pred))
-print(classification_report(Y_test, pred))
+clf = SVC(kernel='linear',C=60).fit(X_t,y_t)
+
+for meeting_id in Labelling_Dataset:
+  meeting = Meeting(meeting_id)
+  meeting.labelConfidences(clf)

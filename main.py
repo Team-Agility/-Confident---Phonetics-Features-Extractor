@@ -8,7 +8,7 @@ import numpy
 # Constants
 PAART_DATASET_DIR = 'praat_dataset'
 DATASET_DIR = 'dataset'
-NO_OF_MEETINGS = 16
+NO_OF_MEETINGS = 'ALL'
 USE_PRAAT_TO_SYLLABLES = False
 
 """
@@ -22,6 +22,8 @@ def GetAllMeetingIDs():
   for file in files:
     if '.' not in file and len(file) == 7:
       meetings.append(file)
+  if NO_OF_MEETINGS == 'ALL':
+    return meetings
   return meetings[0:NO_OF_MEETINGS]
 
 def float_round(num, places = 5):
