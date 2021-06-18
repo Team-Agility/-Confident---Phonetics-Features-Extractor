@@ -10,6 +10,7 @@ pandas = "*"
 seaborn = "*"
 matplotlib = "*"
 sklearn = "*"
+category-encoders = "*"
 
 [dev-packages]
 
