@@ -8,6 +8,7 @@ import numpy
 # Constants
 PAART_DATASET_DIR = 'praat_dataset'
 DATASET_DIR = 'dataset'
+NO_OF_MEETINGS = 'ALL'
 USE_PRAAT_TO_SYLLABLES = False
 
 """
@@ -21,7 +22,9 @@ def GetAllMeetingIDs():
   for file in files:
     if '.' not in file and len(file) == 7:
       meetings.append(file)
-  return meetings
+  if NO_OF_MEETINGS == 'ALL':
+    return meetings
+  return meetings[0:NO_OF_MEETINGS]
 
 def float_round(num, places = 5):
   # print(num)
@@ -65,8 +68,11 @@ class Meeting:
     length = (end_time - start_time) / 1000
     counter = 0
     for i in range(start_point, end_point):
-        if self.audio_data[i] < 0 and self.audio_data[i+1] > 0:
-            counter += 1
+      audio_i = list(self.audio_data[i])[0] if isinstance(self.audio_data[i], numpy.ndarray) else self.audio_data[i]
+      audio_i1 = list(self.audio_data[i+1])[0] if isinstance(self.audio_data[i+1], numpy.ndarray) else self.audio_data[i+1]
+      
+      if audio_i < 0 and audio_i1 > 0:
+          counter += 1
     if counter == 0:
       counter += 1
     if length == 0.0:
