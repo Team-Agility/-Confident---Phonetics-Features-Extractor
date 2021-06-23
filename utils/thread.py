@@ -4,6 +4,7 @@ from utils.s3 import S3Upload
 from utils.db import updateStatus
 import os
 import main
+import core
 # from svm import Meeting
 import threading
 # import networkx as nx
@@ -81,7 +82,7 @@ def train():
 
   S3Upload(id, 'audio.wav')
 
-  transcript, meeting = generateTranscript(id)
+  transcript = generateTranscript(id)
   S3Upload(id, 'aws_transcript.json')
   S3Upload(id, 'transcript.json')
   updateStatus(id, STEPS, len(STEPS), 2, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript))
@@ -91,10 +92,11 @@ def train():
   os.system(f'{UI_PATH_DIR} -f "{CURRENT_DIR}\\praat_automate\\uipath\\Main.xaml"')
   S3Upload(id, 'audio.TextGrid')
 
-  phonetic_features = main.getPhoneticFeatures(id, True)
+  phonetic_features, _ = main.getPhoneticFeatures(id, True)
   S3Upload(id, 'phonetics_features.json')
-  updateStatus(id, STEPS, len(STEPS), 2, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript, phonetic_features))
+  updateStatus(id, STEPS, len(STEPS), 3, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript, phonetic_features))
 
+  meeting = core.getPhoneticFeatures(id, True)
   avg_speech_rate = meeting.findAverageSpeechRate()
   avg_articulation_rate = meeting.findAverageArticulationRate()
   avg_phonation_time = meeting.findAveragephonationTimeRatio()
@@ -102,12 +104,36 @@ def train():
   
   confidence = []
   for act in phonetic_features:
-    short_term_energy = act['measures']['short_term_energy'],
+    short_term_energy = int(act['measures']['short_term_energy']),
     speech_rate = act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
     articulation_rate = act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
     phonation_time_ratio = act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
     MPD = act['measures']['MPD'] / avg_mpd[act['speaker_id']],
-    model.predict([])
+    
+    predicted = model.predict([[short_term_energy[0], speech_rate[0], articulation_rate[0], phonation_time_ratio[0], MPD[0]]])
+    confidence.append({
+      'id': act['id'],
+      'act': act['act'],
+      'start_time': act['start_time'],
+      'end_time': act['end_time'],
+      'speaker_id': act['speaker_id'],
+      'measures': act['measures'],
+      'phonetics_features': act['phonetics_features'],
+      'confidence': ['NonConfidence', 'Neutral', 'Confidence'][int(predicted[0]) + 1]
+    })
+  updateStatus(id, STEPS, len(STEPS), 4, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript, phonetic_features, confidence))
+
+  output = []
+  for act in confidence:
+    output.append({
+      'id': act['id'],
+      'act': act['act'],
+      'start_time': act['start_time'],
+      'end_time': act['end_time'],
+      'speaker_id': act['speaker_id'],
+      'confidence': predicted[0]
+    })
+  updateStatus(id, STEPS, len(STEPS), 5, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript, phonetic_features, confidence, output))
 
 def startTraining(id, steps, dataset_path):
   global ID, STEPS, DATASET_PATH

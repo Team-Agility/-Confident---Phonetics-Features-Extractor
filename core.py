@@ -3,7 +3,6 @@ import glob
 import os
 
 DATASET_DIR = 'dataset'
-os.remove('dataset.csv')
 """
   Get All Dataset's Meeting IDs
   
@@ -19,8 +18,9 @@ def GetAllMeetingIDs():
   return meetings
 
 class Meeting:
-  def __init__(self, meeting_id):
+  def __init__(self, meeting_id, is_single_audio):
     self.meeting_id = meeting_id
+    self.is_single_audio = is_single_audio
     self.meeting_dir = f'{DATASET_DIR}/{self.meeting_id}'
     self.phonetic_features = []
     self.average_speech_rate = {}
@@ -96,27 +96,31 @@ class Meeting:
       self.average_MPD[speaker] = total_sielences / total_syllables
     return self.average_MPD
 
-for meeting_id in GetAllMeetingIDs():
-  meeting = Meeting(meeting_id)
+dataset = []
+
+def getPhoneticFeatures(meeting_id, is_single_audio = False):
+  meeting = Meeting(meeting_id, is_single_audio)
   phonetic_features = meeting.getPhoneticFeatures()
   # print(phonetic_features)
 
-  confidence = meeting.getConfidents()
+  if not is_single_audio:
+    confidence = meeting.getConfidents()
   dataset = []
   avg_speech_rate = meeting.findAverageSpeechRate()
   avg_articulation_rate = meeting.findAverageArticulationRate()
   avg_phonation_time = meeting.findAveragephonationTimeRatio()
   avg_mpd = meeting.findAverageMPD()
-  for act in phonetic_features:
-    if str(act['id']) in confidence:
-        dataset.append({
-            'short_term_energy': act['measures']['short_term_energy'],
-            'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
-            'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
-            'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-            'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
-            'confidence': int(confidence[str(act['id'])])
-        })
+  if not is_single_audio:
+    for act in phonetic_features:
+      if str(act['id']) in confidence:
+          dataset.append({
+              'short_term_energy': act['measures']['short_term_energy'],
+              'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
+              'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
+              'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
+              'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
+              'confidence': int(confidence[str(act['id'])])
+          })
 
     # import random
     # n = random.randint(0,10)
@@ -136,6 +140,16 @@ for meeting_id in GetAllMeetingIDs():
     #   if feature == 'MPD':
     #      dataset[-1][feature] = abs(dataset[-1][feature])
 
+  return meeting
+
+  
+
+if __name__ == "__main__":  
+  os.remove('dataset.csv')
+  for meeting_id in GetAllMeetingIDs():
+      getPhoneticFeatures(meeting_id, False)
+      # Read in the file
+
   import pandas  as pd #Data manipulation
   import numpy as np #Data manipulation
   import matplotlib.pyplot as plt # Visualization
@@ -151,14 +165,13 @@ for meeting_id in GetAllMeetingIDs():
   print(df.head())
   print('')
 
-# Read in the file
-with open('dataset.csv', 'r') as file :
-  filedata = file.read()
+  with open('dataset.csv', 'r') as file :
+    filedata = file.read()
 
-# Replace the target string
-filedata = filedata.replace('\nshort_term_energy,speech_rate,articulation_rate,phonation_time_ratio,MPD,confidence', '')
+  # Replace the target string
+  filedata = filedata.replace('\nshort_term_energy,speech_rate,articulation_rate,phonation_time_ratio,MPD,confidence', '')
 
-# Write the file out again
-with open('dataset.csv', 'w') as file:
-  file.write(filedata)
+  # Write the file out again
+  with open('dataset.csv', 'w') as file:
+    file.write(filedata)
   
