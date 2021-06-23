@@ -27,7 +27,7 @@ def trainSVM():
   print("shape of Y Train :"+str(Y_train.shape))
   print("shape of Y Test :"+str(Y_test.shape))
 
-#   from sklearn.svm import SVC
+  from sklearn.svm import SVC
 #   for this_C in [1,3,5,10,40,60,80,100]:
 #     clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)
 #     scoretrain = clf.score(X_train,Y_train)
