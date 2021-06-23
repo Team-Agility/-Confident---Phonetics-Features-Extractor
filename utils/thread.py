@@ -3,6 +3,7 @@ from utils.transcribe import generateTranscript
 from utils.s3 import S3Upload
 from utils.db import updateStatus
 import os
+import main
 # from svm import Meeting
 import threading
 # import networkx as nx
@@ -65,6 +66,7 @@ def setPraatValues():
   PRAAT_SCRIPT_SRC = f"{CURRENT_DIR}\\praat_automate\\Script.praat"
   PRAAT_EXECUTBLE_SRC = f"{CURRENT_DIR}\\praat_automate\\Praat.exe"
   DATASET_ABS_PATH = DATASET_PATH.replace('/', '\\')
+  
   replace_line('praat_automate\\uipath\\Main.xaml', 109, f'                <InArgument x:TypeArguments="x:String">{CURRENT_DIR}\\{DATASET_ABS_PATH}</InArgument>\n')
   replace_line('praat_automate\\uipath\\Main.xaml', 133, f'                <InArgument x:TypeArguments="x:String">{CURRENT_DIR}\\{DATASET_ABS_PATH}</InArgument>\n')
   
@@ -77,18 +79,35 @@ def train():
   global ID, STEPS, DATASET_PATH
   id = ID
 
-  # S3Upload(id, 'audio.wav')
+  S3Upload(id, 'audio.wav')
 
-  transcript = generateTranscript(id)
+  transcript, meeting = generateTranscript(id)
   S3Upload(id, 'aws_transcript.json')
   S3Upload(id, 'transcript.json')
   updateStatus(id, STEPS, len(STEPS), 2, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript))
 
-  # model = trainSVM()
+  model = trainSVM()
   setPraatValues()
-  os.system(f'{UI_PATH_DIR} -f "{CURRENT_DIR}\\praat_automate\\uipath\\Praat.xaml"')
-  print('--------------------------------------------------------------------------------------')
+  os.system(f'{UI_PATH_DIR} -f "{CURRENT_DIR}\\praat_automate\\uipath\\Main.xaml"')
+  S3Upload(id, 'audio.TextGrid')
 
+  phonetic_features = main.getPhoneticFeatures(id, True)
+  S3Upload(id, 'phonetics_features.json')
+  updateStatus(id, STEPS, len(STEPS), 2, StepsClass(f'http://localhost:5000/{DATASET_PATH}/audio.wav', transcript, phonetic_features))
+
+  avg_speech_rate = meeting.findAverageSpeechRate()
+  avg_articulation_rate = meeting.findAverageArticulationRate()
+  avg_phonation_time = meeting.findAveragephonationTimeRatio()
+  avg_mpd = meeting.findAverageMPD()
+  
+  confidence = []
+  for act in phonetic_features:
+    short_term_energy = act['measures']['short_term_energy'],
+    speech_rate = act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
+    articulation_rate = act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
+    phonation_time_ratio = act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
+    MPD = act['measures']['MPD'] / avg_mpd[act['speaker_id']],
+    model.predict([])
 
 def startTraining(id, steps, dataset_path):
   global ID, STEPS, DATASET_PATH

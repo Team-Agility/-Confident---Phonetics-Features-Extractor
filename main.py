@@ -31,8 +31,9 @@ def float_round(num, places = 5):
   return round(num * (10**places)) / float(10**places)
 
 class Meeting:
-  def __init__(self, meeting_id):
+  def __init__(self, meeting_id, is_single_audio):
     self.meeting_id = meeting_id
+    self.is_single_audio = is_single_audio
     self.meeting_dir = f'{DATASET_DIR}/{self.meeting_id}'
     self.praat_meeting_dir = f'{PAART_DATASET_DIR}/{self.meeting_id}'
     self.audio_file_path = f'{DATASET_DIR}/{self.meeting_id}/audio.wav'
@@ -52,7 +53,11 @@ class Meeting:
   """
   def load_transcript(self):
     with open(f'{self.meeting_dir}/transcript.json') as transcript_json:
-      self.speakers = json.load(transcript_json)['speakers']
+      transcript = json.load(transcript_json)
+      self.speakers = transcript['speakers']
+      if self.is_single_audio:
+        self.transcript = transcript['acts']
+        return
     with open(f'{self.meeting_dir}/dialog_acts.json') as transcript_json:
       self.transcript = json.load(transcript_json)['acts']
 
@@ -102,20 +107,27 @@ class Meeting:
   def load_praat_result(self):
     # with open(f'{self.praat_meeting_dir}/video_meta.json') as res:
     #   audio_speaker_map = json.load(res)
-    audio_speaker_map = {
-      "A": {
-        "path": f"{self.meeting_id}_Headset-0.TextGrid"
-      },
-      "B": {
-        "path": f"{self.meeting_id}_Headset-1.TextGrid"
-      },
-      "C": {
-        "path": f"{self.meeting_id}_Headset-2.TextGrid"
-      },
-      "D": {
-        "path": f"{self.meeting_id}_Headset-3.TextGrid"
+    if self.is_single_audio:
+      audio_speaker_map = {}
+      for speaker in self.speakers:
+        audio_speaker_map[speaker] = {
+          "path": "audio.TextGrid"
+        }
+    else:
+      audio_speaker_map = {
+        "A": {
+          "path": f"{self.meeting_id}_Headset-0.TextGrid"
+        },
+        "B": {
+          "path": f"{self.meeting_id}_Headset-1.TextGrid"
+        },
+        "C": {
+          "path": f"{self.meeting_id}_Headset-2.TextGrid"
+        },
+        "D": {
+          "path": f"{self.meeting_id}_Headset-3.TextGrid"
+        }
       }
-    }
 
     for speaker in self.speakers:
       self.praat_res[speaker] = {
@@ -123,7 +135,10 @@ class Meeting:
         'silences': []
       }
       file = audio_speaker_map[speaker]['path']
-      res = textgrid.TextGrid.fromFile(f'{self.praat_meeting_dir}/{file}')
+      if self.is_single_audio:
+        res = textgrid.TextGrid.fromFile(f'{self.meeting_dir}/{file}')
+      else:
+        res = textgrid.TextGrid.fromFile(f'{self.praat_meeting_dir}/{file}')
       
       for syllable in res[0]:
         self.praat_res[speaker]['syllables'].append(float(syllable.time))
@@ -290,36 +305,43 @@ class Meeting:
   # def getMSD(self, act_id):
   #   return self.getNoOfSyllables(act_id) / self.getPhonationTime(act_id)
 
-for meeting_id in GetAllMeetingIDs():
-    meeting = Meeting(meeting_id)
-    transcript = meeting.get_transcript()
-    
-    newTranscript = []
-    for dialog_act in transcript:
-      id = dialog_act['id']
-      newTranscript.append({
-        'id': id,
-        'act': dialog_act['act'],
-        'start_time': dialog_act['start_time'],
-        'end_time': dialog_act['end_time'],
-        'speaker_id': dialog_act['speaker_id'],
-        'measures': {
-          'short_term_energy': meeting.calculateSTE(id),
-          'speech_rate': meeting.getSpeechRate(id),
-          'articulation_rate': meeting.getArticulationRate(id),
-          'phonation_time_ratio': meeting.getPhonationTimeRatio(id),
-          'mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
-          'silent_pauses_rate': meeting.getSilentPausesRate(id),
-          'MPD': meeting.getMPD(id),
-        },
-        'phonetics_features': {
-          'total_time': meeting.getTotalTime(id),
-          'articulation_rate': meeting.getArticulationRate(id),
-          'silent_pauses': meeting.getSilentPauses(id),
-          'total_syllables': meeting.getNoOfSyllables(id),
-          'phonation_time': meeting.getPhonationTime(id)
-        }
-      })
-    
-    with open(f'{DATASET_DIR}/{meeting_id}/phonetics_features.json', 'w') as f:
-        json.dump(newTranscript, f, indent=4)
+
+def getPhoneticFeatures(meeting_id, is_single_audio = False):
+  meeting = Meeting(meeting_id, is_single_audio)
+  transcript = meeting.get_transcript()
+  
+  newTranscript = []
+  for dialog_act in transcript:
+    id = dialog_act['id']
+    newTranscript.append({
+      'id': id,
+      'act': dialog_act['act'],
+      'start_time': dialog_act['start_time'],
+      'end_time': dialog_act['end_time'],
+      'speaker_id': dialog_act['speaker_id'],
+      'measures': {
+        'short_term_energy': meeting.calculateSTE(id),
+        'speech_rate': meeting.getSpeechRate(id),
+        'articulation_rate': meeting.getArticulationRate(id),
+        'phonation_time_ratio': meeting.getPhonationTimeRatio(id),
+        'mean_length_of_runs': meeting.getMeanLengthOfRuns(id),
+        'silent_pauses_rate': meeting.getSilentPausesRate(id),
+        'MPD': meeting.getMPD(id),
+      },
+      'phonetics_features': {
+        'total_time': meeting.getTotalTime(id),
+        'articulation_rate': meeting.getArticulationRate(id),
+        'silent_pauses': meeting.getSilentPauses(id),
+        'total_syllables': meeting.getNoOfSyllables(id),
+        'phonation_time': meeting.getPhonationTime(id)
+      }
+    })
+  
+  with open(f'{DATASET_DIR}/{meeting_id}/phonetics_features.json', 'w') as f:
+      json.dump(newTranscript, f, indent=4)
+
+  return newTranscript, meeting
+
+if __name__ == "__main__":
+  for meeting_id in GetAllMeetingIDs():
+      getPhoneticFeatures(meeting_id, False)

@@ -111,10 +111,10 @@ for meeting_id in GetAllMeetingIDs():
     if str(act['id']) in confidence:
         dataset.append({
             'short_term_energy': act['measures']['short_term_energy'],
-            'speech_rate': (act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']]) / 1,
+            'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
             'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
             'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-            'MPD': (act['measures']['MPD'] / avg_mpd[act['speaker_id']]),
+            'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
             'confidence': int(confidence[str(act['id'])])
         })
 

@@ -35,8 +35,9 @@ def generateTranscript(meeting_id, max_speakers = 5):
       with open(f'dataset/{meeting_id}/aws_transcript.json', 'w', encoding='utf-8') as f:
         json.dump(transcript, f, ensure_ascii=False, indent=4)
 
-      res = []
-      for segment in transcript['speaker_labels']['segments']:
+      acts = []
+      speakers = []
+      for idx, segment in enumerate(transcript['speaker_labels']['segments']):
         start_time = segment['start_time']
         end_time = segment['end_time']
         speaker_id = segment['speaker_label']
@@ -48,13 +49,19 @@ def generateTranscript(meeting_id, max_speakers = 5):
               act += item['alternatives'][0]['content'] + ' '
               break
 
-        res.append({
-          'start_time': start_time,
-          'end_time': end_time,
+        acts.append({
+          'id': idx,
+          'start_time': float(start_time),
+          'end_time': float(end_time),
           'speaker_id': speaker_id,
-          'segment': act.strip()
+          'act': act.strip()
         })
+        speakers.append(speaker_id)
 
+      res = {
+        'acts': acts,
+        'speakers': list(set(speakers))
+      }
       with open(f'dataset/{meeting_id}/transcript.json', 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False, indent=4)
       return res
@@ -93,8 +100,9 @@ def generateTranscript(meeting_id, max_speakers = 5):
       with open(f'dataset/{meeting_id}/aws_transcript.json', 'w', encoding='utf-8') as f:
         json.dump(transcript, f, ensure_ascii=False, indent=4)
 
-      res = []
-      for segment in transcript['speaker_labels']['segments']:
+      acts = []
+      speakers = []
+      for idx, segment in enumerate(transcript['speaker_labels']['segments']):
         start_time = segment['start_time']
         end_time = segment['end_time']
         speaker_id = segment['speaker_label']
@@ -106,16 +114,22 @@ def generateTranscript(meeting_id, max_speakers = 5):
               act += item['alternatives'][0]['content'] + ' '
               break
 
-        res.append({
+        acts.append({
+          'id': idx,
           'start_time': start_time,
           'end_time': end_time,
           'speaker_id': speaker_id,
-          'segment': act.strip()
+          'act': act.strip()
         })
+        speakers.append(speaker_id)
 
+      res = {
+        'acts': acts,
+        'speakers': list(set(speakers))
+      }
       with open(f'dataset/{meeting_id}/transcript.json', 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False, indent=4)
-        
+
       return res
 
   print('Failed:', result)
