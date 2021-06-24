@@ -121,18 +121,19 @@ class Inputs extends React.Component {
                     accept=".wav"
                     showUploadList={true}
                     beforeUpload={file => {
-                        const reader = new FileReader();
-                        reader.onload = e => {
-                            //debugger
-                            console.log(e.target.result);
-                            const audio = e.target.result;
-                            // new Blob([audio])
+                      console.log(file)
+                        // const reader = new FileReader();
+                        // reader.onload = e => {
+                        //     //debugger
+                        //     console.log(e.target.result);
+                        //     const audio = e.target.result;
+                        //     // new Blob([audio])
                             fetch( "http://localhost:5000/", {
                               method: 'POST',
                               headers: {
                                   'Content-Type': 'application/json'
                               },
-                              body: new Blob([audio])
+                              body: new Blob([file],{type: file.type })
                             })
                             .then(response => {
                               // if (response.status / 100 === 2) resolve({ message: 'Success' });
@@ -140,13 +141,13 @@ class Inputs extends React.Component {
                             });
                       
 
-                            // const createJobDto = {
-                            //   transcript: JSON.parse(e.target.result)
-                            // }
-                            // projectActions.createJob({createJobDto})
+                        //     // const createJobDto = {
+                        //     //   transcript: JSON.parse(e.target.result)
+                        //     // }
+                        //     // projectActions.createJob({createJobDto})
 
-                        };
-                        reader.readAsText(file);
+                        // };
+                        // reader.Blob(file);
                        
                         // Prevent upload
                         return false;
