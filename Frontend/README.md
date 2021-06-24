@@ -1,4 +1,4 @@
-# Team Agility - Module 01
+# Team Agility - Module 02
 
 ## Available Scripts
 
