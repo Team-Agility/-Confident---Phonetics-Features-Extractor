@@ -12,12 +12,11 @@ import {
 } from "antd";
 import { projectActions } from "./ducks";
 import { dummySteps } from "../../dummy";
+import Audio from "./OutputTypes/Audio/Audio";
 import Transcript from "./OutputTypes/Transcript/Transcript";
-import ImageHolder from "./OutputTypes/Image/ImageHolder";
-import StringList from "./OutputTypes/String/StringList";
-import Sequence from "./OutputTypes/Sequence/Sequence";
-
-
+import PhoneticsFeatures from "./OutputTypes/FeatureExtraction/PhoneticsFeatures";
+import ConfidenceSequence from "./OutputTypes/Sequence/ConfidenceSequence";
+import TranscriptWithConfidence from "./OutputTypes/Transcript/TranscriptWithConfidence";
 
 
 const { Step } = Steps;
@@ -111,20 +110,22 @@ class Process extends React.Component {
               {/* <div className="steps-content">{steps[current].content}</div> */}
               <div className="steps-content">
               {
-                steps[current] && steps[current].type == "transcript" ? 
-                  <Transcript data ={steps[current].data}/>
-                  :
-                  steps[current] &&  steps[current].type == "image" ? 
-                    <ImageHolder data ={steps[current].data}/>
-                  :
-                  steps[current] &&  steps[current].type == "string_list" ? 
-                  <StringList data ={steps[current].data}/>
-                  :
-                  steps[current] &&  steps[current].type == "sequence" ? 
-                  <Sequence data ={steps[current].data}/>
-                  :
-                    null
-              }
+                steps[current] &&  steps[current].type == "audio" ? 
+                <Audio data ={steps[current].data}/>
+                :
+                steps[current] &&  steps[current].type == "transcript" ? 
+                <Transcript data ={steps[current].data}/>
+                :
+                steps[current] &&  steps[current].type == "phoneticsFeatureExtraction" ? 
+                <PhoneticsFeatures data ={steps[current].data}/>
+                :
+                steps[current] &&  steps[current].type == "confidenceSequence" ? 
+                <ConfidenceSequence data ={steps[current].data}/>
+                :
+                steps[current] &&  steps[current].type == "TranscriptWithConfidence" ? 
+                <TranscriptWithConfidence data ={steps[current].data}/>:
+                  null
+            }
               </div>
             </React.Fragment>
             
