@@ -4,18 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-TextGrid = "*"
-pandas = "*"
-seaborn = "*"
-matplotlib = "*"
-sklearn = "*"
-category-encoders = "*"
-boto3 = "*"
-flask = "*"
-flask-swagger = "*"
-networkx = "*"
-flask-cors = "*"
 
 [dev-packages]
 
