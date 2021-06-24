@@ -116,19 +116,34 @@ class Inputs extends React.Component {
           <PageHeader className="site-page-header" title="Meeting Minutes" />
           <Spin spinning={createJob.pending}>
             <Form layout={layout} onFinish={handleSubmit(this.handleSubmit)}>
-                <FormItem {...layout} label="Transcript File " required>
+                <FormItem {...layout} label="Audio File " required>
                   <Upload
-                    accept=".json, .csv"
+                    accept=".wav"
                     showUploadList={true}
                     beforeUpload={file => {
                         const reader = new FileReader();
                         reader.onload = e => {
-                            // debugger
+                            //debugger
                             console.log(e.target.result);
-                            const createJobDto = {
-                              transcript: JSON.parse(e.target.result)
-                            }
-                            projectActions.createJob({createJobDto})
+                            const audio = e.target.result;
+                            // new Blob([audio])
+                            fetch( "http://localhost:5000/", {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json'
+                              },
+                              body: new Blob([audio])
+                            })
+                            .then(response => {
+                              // if (response.status / 100 === 2) resolve({ message: 'Success' });
+                              // reject(response);
+                            });
+                      
+
+                            // const createJobDto = {
+                            //   transcript: JSON.parse(e.target.result)
+                            // }
+                            // projectActions.createJob({createJobDto})
 
                         };
                         reader.readAsText(file);
