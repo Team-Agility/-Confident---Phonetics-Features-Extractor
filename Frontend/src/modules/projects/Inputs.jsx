@@ -19,6 +19,7 @@ import { projectActions } from "./ducks";
 import Uploader from "../../Components/Common/Controls/Uploader";
 import UploadFileContent from "../../Components/Common/UploadFileContent";
 import { UploadOutlined } from '@ant-design/icons';
+import history from "../../_helpers/history";
 
 const FormItem = Form.Item;
 const AInputField = makeField(Input);
@@ -60,6 +61,7 @@ class Inputs extends React.Component {
       newDescription: "",
       newLevel: "",
       progress:0,
+      loading:false,
       project:[
         {
           key: '1',
@@ -108,10 +110,11 @@ class Inputs extends React.Component {
 
   render() {
     const {handleSubmit, createJob, projectActions } = this.props;
+    const { loading } = this.state
     console.log("Inputs ~ render ~ this.props", this.props)
 
     return (
-      <div>
+      <Spin spinning={loading}>
         <Card>
           <PageHeader className="site-page-header" title="Meeting Minutes" />
           <Spin spinning={createJob.pending}>
@@ -121,6 +124,9 @@ class Inputs extends React.Component {
                     accept=".wav"
                     showUploadList={true}
                     beforeUpload={file => {
+                      this.setState({
+                        loading:true
+                      })
                       console.log(file)
                         // const reader = new FileReader();
                         // reader.onload = e => {
@@ -136,18 +142,16 @@ class Inputs extends React.Component {
                               body: new Blob([file],{type: file.type })
                             })
                             .then(response => {
+                              this.setState({
+                                loading:false
+                              })
+                              console.log(response)
                               // if (response.status / 100 === 2) resolve({ message: 'Success' });
                               // reject(response);
+                              setTimeout(function(){ 
+                                history.push("/output");
+                              }, 3000);
                             });
-                      
-
-                        //     // const createJobDto = {
-                        //     //   transcript: JSON.parse(e.target.result)
-                        //     // }
-                        //     // projectActions.createJob({createJobDto})
-
-                        // };
-                        // reader.Blob(file);
                        
                         // Prevent upload
                         return false;
@@ -161,7 +165,7 @@ class Inputs extends React.Component {
             </Form>
            </Spin>
          </Card>
-       </div>
+       </Spin>
     );
   }
 }
