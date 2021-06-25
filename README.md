@@ -8,14 +8,7 @@
     - Install UI Path Studio [UI Path Studio](https://www.uipath.com/developers/studio-download)
     
 
-2. Install Required Python Packages:
-
-    ```
-    $ cd Backend
-    $ pip install -r requirements.txt
-    ```
-
-3. Download Dataset
+2. Download Dataset
 
     Estimated Size: 1.94 GiB.
 
@@ -25,7 +18,7 @@
     $ python download_confidents_dataset.py
     ```
 
-4. Update Dataset
+3. Update Dataset
 
     ```
     $ cd Backend
@@ -48,7 +41,14 @@
         Default output format: json
     ```
 
-2. Serve Backend Locally:
+2. Install Required Python Packages:
+
+    ```
+    $ cd Backend
+    $ pip install -r requirements.txt
+    ```
+    
+3. Serve Backend Locally:
 
     - Update `UI_PATH_DIR` in `utils/thread.py`
 
@@ -64,7 +64,7 @@
     - Serve at: [http://localhost:5000](http://localhost:5000)
     - API doc: [https://documenter.getpostman.com/view/5662193/TzecDQj6](https://documenter.getpostman.com/view/5662193/TzecDQj6)
 
-2. Serve Frontend Locally:
+4. Serve Frontend Locally:
 
     ```
     $ cd Frontend
