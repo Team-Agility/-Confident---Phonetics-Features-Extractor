@@ -224,6 +224,14 @@ for meeting_id in GetAllMeetingIDs():
   print(model.score(X_train, Y_train))
   print(model.score(X_test, Y_test))
 
+  pred = model.predict(X_test)
+
+  from sklearn.metrics import classification_report, confusion_matrix
+
+  print(confusion_matrix(Y_test, pred))
+
+  print(classification_report(Y_test, pred))
+
   # from sklearn.svm import SVC
   # for this_C in [1,3,5,10,40,60,80,100]:
   #   clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)

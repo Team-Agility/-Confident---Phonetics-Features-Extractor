@@ -58,6 +58,7 @@
 
     ```
     $ cd Backend
+    $ pipenv shell
     $ python serve.py
     ```
 
@@ -68,7 +69,6 @@
 
     ```
     $ cd Frontend
-    $ npm install
     $ npm start
     ```
 

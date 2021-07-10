@@ -330,7 +330,6 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
       },
       'phonetics_features': {
         'total_time': meeting.getTotalTime(id),
-        'articulation_rate': meeting.getArticulationRate(id),
         'silent_pauses': meeting.getSilentPauses(id),
         'total_syllables': meeting.getNoOfSyllables(id),
         'phonation_time': meeting.getPhonationTime(id)

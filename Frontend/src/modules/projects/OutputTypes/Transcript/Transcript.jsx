@@ -10,7 +10,7 @@ export default function Transcript({data}) {
                 {acts && acts.map((content,i)=>{
                     return(
                         <div key={i}>
-                            <p>content :  {content["segment"]}</p>
+                            <p>content :  {content["act"]}</p>
                             <p>end_time :  {content["end_time"]}</p>
                             <p>is_punction :  {content["is_punction"]? "True" : "False"}</p>
                             <p>speaker_id :  {content["speaker_id"]}</p>
