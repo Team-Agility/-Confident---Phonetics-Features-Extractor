@@ -29,42 +29,42 @@ def check_job_name(job_name):
 
 def generateTranscript(meeting_id, max_speakers = 5): 
 
-  transcriptFileUri = 'https://scrum-meeting-minutes.s3.ap-southeast-1.amazonaws.com/aws_transcript.json'
-  with urllib.request.urlopen(transcriptFileUri) as url:
-      transcript = json.loads(url.read().decode())['results']
-      with open(f'dataset/{meeting_id}/aws_transcript.json', 'w', encoding='utf-8') as f:
-        json.dump(transcript, f, ensure_ascii=False, indent=4)
+  # transcriptFileUri = 'https://scrum-meeting-minutes.s3.ap-southeast-1.amazonaws.com/aws_transcript.json'
+  # with urllib.request.urlopen(transcriptFileUri) as url:
+  #     transcript = json.loads(url.read().decode())['results']
+  #     with open(f'dataset/{meeting_id}/aws_transcript.json', 'w', encoding='utf-8') as f:
+  #       json.dump(transcript, f, ensure_ascii=False, indent=4)
 
-      acts = []
-      speakers = []
-      for idx, segment in enumerate(transcript['speaker_labels']['segments']):
-        start_time = segment['start_time']
-        end_time = segment['end_time']
-        speaker_id = segment['speaker_label']
+      # acts = []
+      # speakers = []
+      # for idx, segment in enumerate(transcript['speaker_labels']['segments']):
+      #   start_time = segment['start_time']
+      #   end_time = segment['end_time']
+      #   speaker_id = segment['speaker_label']
 
-        act = ''
-        for word in segment['items']:
-          for item in transcript['items']:
-            if 'start_time' in item and item['start_time'] == word['start_time'] and item['end_time'] == word['end_time']:
-              act += item['alternatives'][0]['content'] + ' '
-              break
+      #   act = ''
+      #   for word in segment['items']:
+      #     for item in transcript['items']:
+      #       if 'start_time' in item and item['start_time'] == word['start_time'] and item['end_time'] == word['end_time']:
+      #         act += item['alternatives'][0]['content'] + ' '
+      #         break
 
-        acts.append({
-          'id': idx,
-          'start_time': float(start_time),
-          'end_time': float(end_time),
-          'speaker_id': speaker_id,
-          'act': act.strip()
-        })
-        speakers.append(speaker_id)
+      #   acts.append({
+      #     'id': idx,
+      #     'start_time': float(start_time),
+      #     'end_time': float(end_time),
+      #     'speaker_id': speaker_id,
+      #     'act': act.strip()
+      #   })
+      #   speakers.append(speaker_id)
 
-      res = {
-        'acts': acts,
-        'speakers': list(set(speakers))
-      }
-      with open(f'dataset/{meeting_id}/transcript.json', 'w', encoding='utf-8') as f:
-        json.dump(res, f, ensure_ascii=False, indent=4)
-      return res
+      # res = {
+      #   'acts': acts,
+      #   'speakers': list(set(speakers))
+      # }
+      # with open(f'dataset/{meeting_id}/transcript.json', 'w', encoding='utf-8') as f:
+      #   json.dump(res, f, ensure_ascii=False, indent=4)
+      # return res
 
   print(f'Generating Transcript {meeting_id}')
   if max_speakers > 10:

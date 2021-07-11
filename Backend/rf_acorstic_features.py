@@ -9,7 +9,7 @@ plt.rcParams['font.weight'] = 'bold'
 plt.style.use('seaborn-whitegrid')
 
 # df = pd.DataFrame(dataset)
-df = pd.read_csv('dataset.csv')
+df = pd.read_csv('dataset_af.csv')
 
 print('\nNumber of rows and columns in the data set: ', df.shape)
 print(df.head())
@@ -53,4 +53,3 @@ print('\nPrecision : {}'.format(precision))
 print('Recall    : {}'.format(recall))
 print('F-score   : {}'.format(fscore))
 print('Support   : {}'.format(support))
-

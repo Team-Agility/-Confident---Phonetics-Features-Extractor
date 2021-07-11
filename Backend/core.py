@@ -99,6 +99,7 @@ class Meeting:
     return self.average_MPD
 
 dataset = []
+dataset_af = []
 
 
 def logarithm(n):
@@ -107,7 +108,7 @@ def logarithm(n):
   return math.log(n)
 
 def getPhoneticFeatures(meeting_id, is_single_audio = False):
-  global dataset
+  global dataset, dataset_af
   meeting = Meeting(meeting_id, is_single_audio)
   phonetic_features = meeting.getPhoneticFeatures()
   # print(phonetic_features)
@@ -115,6 +116,7 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
   if not is_single_audio:
     confidence = meeting.getConfidents()
   dataset = []
+  dataset_af = []
   avg_speech_rate = meeting.findAverageSpeechRate()
   avg_articulation_rate = meeting.findAverageArticulationRate()
   avg_phonation_time = meeting.findAveragephonationTimeRatio()
@@ -128,7 +130,14 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
             'articulation_rate': logarithm(act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']]),
             'phonation_time_ratio': logarithm(act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']]),
             'MPD': logarithm(act['measures']['MPD'] / avg_mpd[act['speaker_id']]),
-            'confidence': conv.string2int(meeting_id, confidence[str(act['id'])], len(dataset))
+            'confidence': conv.string2int(meeting_id, confidence[str(act['id'])], len(dataset), 8)
+        })
+        dataset_af.append({
+          'total_time': act['phonetics_features']['total_time'],
+          'silent_pauses': act['phonetics_features']['silent_pauses'],
+          'total_syllables': act['phonetics_features']['total_syllables'],
+          'phonation_time': act['phonetics_features']['phonation_time'],
+          'confidence': conv.string2int(meeting_id, confidence[str(act['id'])], len(dataset), 5)
         })
 
   return meeting
@@ -142,6 +151,8 @@ import matplotlib.pyplot as plt # Visualization
 if __name__ == "__main__":  
   if os.path.exists('dataset.csv'):
     os.remove('dataset.csv')
+  if os.path.exists('dataset_af.csv'):
+    os.remove('dataset_af.csv')
     
   for meeting_id in GetAllMeetingIDs():
       meeting = getPhoneticFeatures(meeting_id, False)
@@ -151,6 +162,12 @@ if __name__ == "__main__":
       print('\nNumber of rows and columns in the data set: ', df.shape)
       print(df.head())
       print('')
+
+      pd_af = pd.DataFrame(dataset_af)
+      pd_af.to_csv("dataset_af.csv", mode='a', encoding="utf-8", index=False)
+      # print('\nNumber of rows and columns in the data set: ', pd_af.shape)
+      # print(pd_af.head())
+      # print('')
 
   plt.rcParams['figure.figsize'] = [8,5]
   plt.rcParams['font.size'] =14
@@ -166,4 +183,14 @@ if __name__ == "__main__":
   # Write the file out again
   with open('dataset.csv', 'w') as file:
     file.write(filedata)
+
+  with open('dataset_af.csv', 'r') as file_af:
+    filedata_af = file_af.read()
+
+  # Replace the target string
+  filedata_af = filedata_af.replace('\ntotal_time,silent_pauses,total_syllables,phonation_time,confidence', '')
+
+  # Write the file out again
+  with open('dataset_af.csv', 'w') as file_af:
+    file_af.write(filedata_af)
   
