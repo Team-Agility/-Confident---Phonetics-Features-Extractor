@@ -15,7 +15,7 @@ def GetAllMeetingIDs():
     if '.' not in file and len(file) == 7:
       meetings.append(file)
       # break
-  return meetings
+  return meetings[0:16]
 
 class Meeting:
   def __init__(self, meeting_id, is_single_audio):
@@ -99,6 +99,7 @@ class Meeting:
 dataset = []
 
 def getPhoneticFeatures(meeting_id, is_single_audio = False):
+  global dataset
   meeting = Meeting(meeting_id, is_single_audio)
   phonetic_features = meeting.getPhoneticFeatures()
   # print(phonetic_features)
@@ -143,27 +144,28 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
   return meeting
 
   
+  
+import pandas  as pd #Data manipulation
+import numpy as np #Data manipulation
+import matplotlib.pyplot as plt # Visualization
 
 if __name__ == "__main__":  
-  os.remove('dataset.csv')
+  if os.path.exists('dataset.csv'):
+    os.remove('dataset.csv')
+    
   for meeting_id in GetAllMeetingIDs():
-      getPhoneticFeatures(meeting_id, False)
-      # Read in the file
-
-  import pandas  as pd #Data manipulation
-  import numpy as np #Data manipulation
-  import matplotlib.pyplot as plt # Visualization
+      meeting = getPhoneticFeatures(meeting_id, False)
+      # Write to the file
+      df = pd.DataFrame(dataset)
+      df.to_csv("dataset.csv", mode='a', encoding="utf-8", index=False)
+      print('\nNumber of rows and columns in the data set: ', df.shape)
+      print(df.head())
+      print('')
 
   plt.rcParams['figure.figsize'] = [8,5]
   plt.rcParams['font.size'] =14
   plt.rcParams['font.weight']= 'bold'
   plt.style.use('seaborn-whitegrid')
-
-  df = pd.DataFrame(dataset)
-  df.to_csv("dataset.csv", mode='a', encoding="utf-8", index=False)
-  print('\nNumber of rows and columns in the data set: ', df.shape)
-  print(df.head())
-  print('')
 
   with open('dataset.csv', 'r') as file :
     filedata = file.read()
