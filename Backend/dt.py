@@ -37,7 +37,6 @@ print("shape of X Test :" + str(X_test.shape))
 print("shape of Y Train :" + str(Y_train.shape))
 print("shape of Y Test :" + str(Y_test.shape))
 
-
 # KNN
 from sklearn.tree import DecisionTreeClassifier
 clf = DecisionTreeClassifier() 

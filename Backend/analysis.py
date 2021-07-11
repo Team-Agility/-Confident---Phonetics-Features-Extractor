@@ -14,6 +14,8 @@ print('\nNumber of rows and columns in the data set: ', df.shape)
 print(df.head())
 print('')
 
+df = df[df['short_term_energy'] < 1.013540e+15]
+
 # sns.lmplot(x='speech_rate', y='confidence', data=df, aspect=2, height=6)
 # plt.xlabel('Speech Rate (words/s)')
 # plt.ylabel('Confidence')

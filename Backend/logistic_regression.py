@@ -211,7 +211,7 @@ for meeting_id in GetAllMeetingIDs():
   X_t = scaler.fit_transform(X_t)
 
   from sklearn.model_selection import train_test_split
-  X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.20,random_state=42)
+  X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.30,random_state=42)
   print("shape of X Train :"+str(X_train.shape))
   print("shape of X Test :"+str(X_test.shape))
   print("shape of Y Train :"+str(Y_train.shape))

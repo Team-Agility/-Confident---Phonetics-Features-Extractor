@@ -2,6 +2,7 @@ import json
 import glob
 import os
 import conversion as conv
+import math
 
 DATASET_DIR = 'dataset'
 """
@@ -99,6 +100,12 @@ class Meeting:
 
 dataset = []
 
+
+def logarithm(n):
+  if n==0:
+    return -1
+  return math.log(n)
+
 def getPhoneticFeatures(meeting_id, is_single_audio = False):
   global dataset
   meeting = Meeting(meeting_id, is_single_audio)
@@ -117,14 +124,12 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
       if str(act['id']) in confidence:
         dataset.append({
             'short_term_energy': act['measures']['short_term_energy'],
-            'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
-            'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
-            'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-            'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
+            'speech_rate': logarithm(act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']]),
+            'articulation_rate': logarithm(act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']]),
+            'phonation_time_ratio': logarithm(act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']]),
+            'MPD': logarithm(act['measures']['MPD'] / avg_mpd[act['speaker_id']]),
             'confidence': conv.string2int(meeting_id, confidence[str(act['id'])], len(dataset))
         })
-
-          
 
   return meeting
 

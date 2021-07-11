@@ -21,7 +21,7 @@ scaler = MinMaxScaler()
 X_t = scaler.fit_transform(X_t)
 
 from sklearn.model_selection import train_test_split
-X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.20,random_state=42)
+X_train,X_test,Y_train,Y_test = train_test_split(X_t,y_t,test_size=.20)
 print("shape of X Train :"+str(X_train.shape))
 print("shape of X Test :"+str(X_test.shape))
 print("shape of Y Train :"+str(Y_train.shape))
@@ -51,5 +51,5 @@ print("The Average Stratified Cross Validation Score :"+str(strat_scores.mean())
 #print("The Average LeaveOneOut Cross Validation Score :"+str(Loo_scores.mean()))
 pred = clf1.predict(X_test)
 from sklearn.metrics import classification_report, confusion_matrix
-print(confusion_matrix(Y_test,pred))
+# print(confusion_matrix(Y_test,pred))
 print(classification_report(Y_test, pred))
