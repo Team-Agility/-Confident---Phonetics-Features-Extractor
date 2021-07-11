@@ -127,7 +127,7 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
             import random
             
             conf = dataset[-1]['confidence']
-            if (len(dataset) % 4) == 0:
+            if (len(dataset) % 7) == 0:
               arr = [-1,1,0]
               arr.remove(conf)
               dataset[-1]['confidence'] = arr[random.randint(0,1)]
