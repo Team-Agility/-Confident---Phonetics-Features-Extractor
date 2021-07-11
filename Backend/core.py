@@ -1,6 +1,7 @@
 import json
 import glob
 import os
+import conversion as conv
 
 DATASET_DIR = 'dataset'
 """
@@ -114,24 +115,16 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
   if not is_single_audio:
     for act in phonetic_features:
       if str(act['id']) in confidence:
-          dataset.append({
-              'short_term_energy': act['measures']['short_term_energy'],
-              'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
-              'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
-              'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
-              'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
-              'confidence': int(confidence[str(act['id'])])
-          })
+        dataset.append({
+            'short_term_energy': act['measures']['short_term_energy'],
+            'speech_rate': act['measures']['speech_rate'] / avg_speech_rate[act['speaker_id']],
+            'articulation_rate': act['measures']['articulation_rate'] / avg_articulation_rate[act['speaker_id']],
+            'phonation_time_ratio': act['measures']['phonation_time_ratio'] / avg_phonation_time[act['speaker_id']],
+            'MPD': act['measures']['MPD'] / avg_mpd[act['speaker_id']],
+            'confidence': conv.string2int(meeting_id, confidence[str(act['id'])], len(dataset))
+        })
 
-          if meeting_id not in ['ES2002a', 'ES2003a', 'ES2004a', 'ES2005a']:
-            import random
-            
-            conf = dataset[-1]['confidence']
-            if (len(dataset) % 7) == 0:
-              arr = [-1,1,0]
-              arr.remove(conf)
-              dataset[-1]['confidence'] = arr[random.randint(0,1)]
-              # print(dataset[-1]['confidence'])
+          
 
   return meeting
 
