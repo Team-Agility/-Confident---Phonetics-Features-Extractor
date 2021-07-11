@@ -27,12 +27,15 @@ print("shape of X Test :"+str(X_test.shape))
 print("shape of Y Train :"+str(Y_train.shape))
 print("shape of Y Test :"+str(Y_test.shape))
 
+import warnings
+warnings.filterwarnings('always')
+
 from sklearn.svm import SVC
-for this_C in [1,3,5,10,40,60,80,100]:
-  clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)
-  scoretrain = clf.score(X_train,Y_train)
-  scoretest  = clf.score(X_test,Y_test)
-  print("Linear SVM value of C:{}, training score :{:2f} , Test Score: {:2f} \n".format(this_C,scoretrain,scoretest))
+# for this_C in [1,3,5,10,40,60,80,100]:
+#   clf = SVC(kernel='linear',C=this_C).fit(X_train,Y_train)
+#   scoretrain = clf.score(X_train,Y_train)
+#   scoretest  = clf.score(X_test,Y_test)
+#   print("Linear SVM value of C:{}, training score :{:2f} , Test Score: {:2f} \n".format(this_C,scoretrain,scoretest))
 
 from sklearn.model_selection import cross_val_score,StratifiedKFold,LeaveOneOut
 clf1 = SVC(kernel='linear',C=20).fit(X_train,Y_train)

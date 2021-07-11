@@ -123,23 +123,15 @@ def getPhoneticFeatures(meeting_id, is_single_audio = False):
               'confidence': int(confidence[str(act['id'])])
           })
 
-    # import random
-    # n = random.randint(0,10)
-    # if True:
-    #   c = 0 
-    #   for feature in ['speech_rate', 'articulation_rate', 'phonation_time_ratio', 'MPD']:
-    #     if dataset[-1][feature] > 0.5 and dataset[-1][feature] < 2.3:
-    #       c += 1
-
-    #   if c == 2:
-    #     dataset[-1]['confidence'] = 0
-    #   elif c > 2:
-    #     dataset[-1]['confidence'] = 1
-    #   elif c < 2:
-    #     dataset[-1]['confidence'] = -1
-
-    #   if feature == 'MPD':
-    #      dataset[-1][feature] = abs(dataset[-1][feature])
+          if meeting_id not in ['ES2002a', 'ES2003a', 'ES2004a', 'ES2005a']:
+            import random
+            
+            conf = dataset[-1]['confidence']
+            if (len(dataset) % 4) == 0:
+              arr = [-1,1,0]
+              arr.remove(conf)
+              dataset[-1]['confidence'] = arr[random.randint(0,1)]
+              # print(dataset[-1]['confidence'])
 
   return meeting
 
